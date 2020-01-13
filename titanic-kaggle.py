@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import sklearn
 
 dataset = pd.read_csv('titanic/train.csv')
 
@@ -19,10 +20,26 @@ plt.show()
 
 dataset['Age'].isnull().sum()
 # Using mean
-dataset['Age'] = dataset['Age'].fillna(29)
+dataset['Age'] = dataset['Age'].fillna(dataset['Age'].mean())
 
 sns.barplot('Sex', 'Survived', data=dataset)  # No. of females survived is more
 plt.show()
+
+# Encodeing Labels
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+
+labelEncoder = LabelEncoder()
+dataset['Sex'] = labelEncoder.fit_transform(dataset['Sex'])
+dataset['Embarked'] = labelEncoder.fit_transform(dataset['Embarked'])
+
+dataset = dataset.values
+one_hot_encoder = OneHotEncoder(categorical_features=[1,7])
+dataset = one_hot_encoder.fit_transform(dataset).toarray()
+
+# Applying Algos
+
+
+
 
 
 
