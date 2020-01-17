@@ -113,8 +113,6 @@ for i in [7, 8, 9, 10]:
     maxi = max(x[:, i])
     x[:, i] = (x[:, i] - mini) / (maxi - mini)
 
-x[:, 8] = x[:, 8] + x[:, 9]
-x = np.delete(x, 9, axis=1)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=4)
 
@@ -158,7 +156,7 @@ ann.add(Dense(output_dim=1, init='uniform', activation='sigmoid'))
 
 ann.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-ann.fit(x[:600], y[:600], batch_size=30, nb_epoch=100)
+ann.fit(x_train, y_train, batch_size=30, nb_epoch=100)
 yPred_ann = ann.predict(x[600:])
 
 for i in range(len(yPred_ann)):
@@ -209,6 +207,103 @@ ensemble = VotingClassifier(estimator, voting='hard')
 
 ensemble.fit(x_train, y_train)
 ensemble.score(x_test, y_test)
+
+#########################################################
+
+test = pd.read_csv('titanic/test.csv')
+test = test.drop(['PassengerId', 'Name', 'Ticket', 'Cabin'], axis=1)
+
+test['Fare'] = test['Fare'].fillna(test['Fare'].mean())
+
+labelEn2 = LabelEncoder()
+test['Sex'] = labelEn2.fit_transform(test['Sex'])
+test['Embarked'] = labelEn2.fit_transform(test['Embarked'])
+
+a = test['Age'].isnull()
+age_train = test
+age_test = test
+for i in range(len(a)):
+    if a[i]:
+        age_train = age_train.drop(i, axis=0)
+    else:
+        age_test = age_test.drop(i, axis=0)
+
+age_trainX = age_train.drop('Age', axis=1)
+age_trainY = age_train['Age']
+age_trainX = age_trainX.values
+age_trainY = age_trainY.values
+
+ohe2 = OneHotEncoder(categorical_features=[0, 5])
+age_trainX = ohe2.fit_transform(age_trainX).toarray()
+
+for i in [7, 8, 9]:
+    print(i)
+    mini = min(age_trainX[:, i])
+    maxi = max(age_trainX[:, i])
+    print(mini, maxi)
+    age_trainX[:, i] = (age_trainX[:, i] - mini) / (maxi - mini)
+
+reg2 = LinearRegression()
+reg2.fit(age_trainX, age_trainY)
+
+age_test = age_test.drop('Age', axis=1)
+age_test = age_test.values
+ohe2 = OneHotEncoder(categorical_features=[0, 5])
+age_test = ohe2.fit_transform(age_test).toarray()
+
+for i in [7, 8, 9]:
+    print(i)
+    mini = min(age_test[:, i])
+    maxi = max(age_test[:, i])
+    print(mini, maxi)
+    age_test[:, i] = (age_test[:, i] - mini) / (maxi - mini)
+
+age_test_pred = reg2.predict(age_test)
+
+counter = -1
+age_isnull = test.isnull()
+for i in range(len(test)):
+    if age_isnull[i]:
+        counter += 1
+        test['Age'][i] = age_test_pred[counter]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from sklearn.ensemble import RandomForestClassifier  # accuracy = 76.** - 77.**
+
+rfc = RandomForestClassifier()
+rfc.fit(x, y)
+
+yPred_rfc = rfc.predict()
+acc_rfc = accuracy_score(yPred_rfc, y_test)
 
 
 
