@@ -211,6 +211,7 @@ ensemble.score(x_test, y_test)
 #########################################################
 
 test = pd.read_csv('titanic/test.csv')
+psngrID = test['PassengerId']
 test = test.drop(['PassengerId', 'Name', 'Ticket', 'Cabin'], axis=1)
 
 test['Fare'] = test['Fare'].fillna(test['Fare'].mean())
@@ -261,40 +262,22 @@ for i in [7, 8, 9]:
 age_test_pred = reg2.predict(age_test)
 
 counter = -1
-age_isnull = test.isnull()
+age_isnull = test['Age'].isnull()
 for i in range(len(test)):
     if age_isnull[i]:
         counter += 1
         test['Age'][i] = age_test_pred[counter]
 
+test = test.values
+ohe2 = OneHotEncoder(categorical_features=[0,6])
+test = ohe2.fit_transform(test).toarray()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+for i in [7,8,9,10]:
+    print(i)
+    mini = min(test[:, i])
+    maxi = max(test[:, i])
+    print(mini, maxi)
+    test[:, i] = (test[:, i] - mini) / (maxi - mini)
 
 
 from sklearn.ensemble import RandomForestClassifier  # accuracy = 76.** - 77.**
@@ -302,11 +285,12 @@ from sklearn.ensemble import RandomForestClassifier  # accuracy = 76.** - 77.**
 rfc = RandomForestClassifier()
 rfc.fit(x, y)
 
-yPred_rfc = rfc.predict()
-acc_rfc = accuracy_score(yPred_rfc, y_test)
+yPred_rfc = rfc.predict(test)
 
-
-
+submission = pd.DataFrame({'PassengerId':psngrID,'Survived':yPred_rfc})
+filename = 'Titanic Predictions 1.csv'
+submission.to_csv(filename,index=False)
+print('Saved file: ' + filename)
 
 
 
