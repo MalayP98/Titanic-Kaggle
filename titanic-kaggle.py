@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import GridSearchCV
 
 dataset = pd.read_csv('titanic/train.csv')
 
@@ -146,6 +147,7 @@ acc_rfc = accuracy_score(yPred_rfc, y_test)
 import keras
 from keras.models import Sequential
 from keras.layers import Dense
+l = []
 
 ann = Sequential()
 
@@ -157,13 +159,25 @@ ann.add(Dense(output_dim=1, init='uniform', activation='sigmoid'))
 ann.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 ann.fit(x_train, y_train, batch_size=30, nb_epoch=100)
-yPred_ann = ann.predict(x[600:])
+yPred_ann = ann.predict(x_test)
+yPred_ann1 = []
+for j in (np.arange(0.5, 0.7, 0.01)):
+    for i in range(len(yPred_ann)):
+        if yPred_ann[i] > j:
+            yPred_ann1.append(1)
+        else:
+            yPred_ann1.append(0)
+
+    l.append(accuracy_score(yPred_ann1, y_test))
+    yPred_ann1.clear()
 
 for i in range(len(yPred_ann)):
-    if yPred_ann[i] > 0.5:
+    if yPred_ann[i] > 0.62:
         yPred_ann[i] = 1
     else:
         yPred_ann[i] = 0
+
+
 
 ####################################################
 
@@ -287,7 +301,33 @@ rfc.fit(x, y)
 
 yPred_rfc = rfc.predict(test)
 
-submission = pd.DataFrame({'PassengerId':psngrID,'Survived':yPred_rfc})
+
+from sklearn.svm import SVC  # accuracy = 81.**
+
+classifier = SVC(C=3, kernel='poly', gamma='scale', random_state=0)
+classifier.fit(x, y)
+
+yPred_svm = classifier.predict(test)
+
+from sklearn.linear_model import LogisticRegression
+
+logReg = LogisticRegression()
+logReg.fit(x, y)
+
+yPred_lg = logReg.predict(test)
+
+#C=1.0, kernel='rbf', degree=3, gamma='scale', coef0=0.0, shrinking=True, probability=False, tol=0.001,
+#cache_size=200, class_weight=None, verbose=False, max_iter=-1, decision_function_shape='ovr',
+#break_ties=False, random_state=None)[source]
+
+parameter = {'C':[1,3,5,7,10], 'kernel':('rbf', 'poly', 'sigmoid'), 'gamma':('auto', 'scale')}
+gsc = GridSearchCV(classifier, parameter)
+
+gsc.fit(x, y)
+
+
+
+submission = pd.DataFrame({'PassengerId':psngrID,'Survived':yPred_svm})
 filename = 'Titanic Predictions 1.csv'
 submission.to_csv(filename,index=False)
 print('Saved file: ' + filename)
